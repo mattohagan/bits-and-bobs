@@ -13,6 +13,7 @@ worklog is at https://www.are.na/m-att/concept-bits-and-bobs
 - [ ] Get rotating three.js objects working on mobile 
 - [ ] Create page for phones, backend picks a control, and renders just that control on the phone
 - [ ] Create system where client sends list of controls to the backend to store/update store
+- [ ] Deploy MVP to a server with index and phone pages (could have new server with a ohagan.co redirect to it)
 
 ~ line of the mvp ~
 
