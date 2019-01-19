@@ -1,28 +1,32 @@
 $(function () {
   var socket = io();
 
-  let canvasWidth = 300;
-  let canvasHeight = 300;
-  let canvas = new Canvas(canvasWidth, canvasHeight, "input-cube");
-  let canvas2 = new Canvas(canvasWidth, canvasHeight, "output")
+  let outputWidth = 600;
+  let outputHeight = 600;
+  let canvasOutput = new Canvas(outputWidth, outputHeight, "output");
 
-  let slider = document.getElementById('slider');
+  let controlWidth = 300;
+  let controlHeight = 300;
+  let canvas = new Canvas(controlWidth, controlHeight, "input-cube");
+  let canvas3 = new Canvas(controlWidth, controlHeight, "input-orientation");
+
+  let slider = document.getElementById('input-slider');
   slider.addEventListener('input', function(){
-    let val = $('#slider').val();
+    let val = $('#input-slider').val();
     socket.emit('slider update', val);
-    canvas.updateRotationX(val);
+    canvasOutput.updateRotationX(val, 'input-slider');
   });
 
   socket.on('slider update', function(val){
-    $('#slider').val(val);
-    canvas.updateRotationX(val);
+    $('#input-slider').val(val);
+    canvasOutput.updateRotationX(val, 'input-slider');
   });
 
 
-  function Canvas(height, width, id){
+  function Canvas(width, height, id){
     this.rotationSpeedX = 0.01;
     this.rotationSpeedY = 0.01;
-
+    let isRotating = true;
 
 
     var scene = new THREE.Scene();
@@ -48,26 +52,34 @@ $(function () {
   	scene.add(cube);
 
 
-    // to traverse a square
-    let divisions = 5;
-    let y = -100;
-    let floorSize = 100;
-    let initial = (divisions / 2) * floorSize * -1;
-    initial += (floorSize / 2) // offset since boxes are created from center
 
     let floorPieces = [];
-    for(let i = 0; i < divisions; i++){
-      let x = initial + (i * floorSize)
-      let row = [];
-      for(let j = 0; j < divisions; j++){
-        let z = initial + (j * floorSize);
-        let piece = new FloorSquare(floorSize, x, y, z);
-        row.push(piece);
+    function addFloor(){
+      // to traverse a square
+      let divisions = 5;
+      let y = -100;
+      let floorSize = 100;
+      let initial = (divisions / 2) * floorSize * -1;
+      initial += (floorSize / 2) // offset since boxes are created from center
 
-        scene.add(piece.mesh);
+      for(let i = 0; i < divisions; i++){
+        let x = initial + (i * floorSize)
+        let row = [];
+        for(let j = 0; j < divisions; j++){
+          let z = initial + (j * floorSize);
+          let piece = new FloorSquare(floorSize, x, y, z);
+          row.push(piece);
+
+          scene.add(piece.mesh);
+        }
+        floorPieces.push(row);
       }
-      floorPieces.push(row);
     }
+
+    if(id == 'output'){
+      addFloor();
+    }
+
 
     $('#button-1').click(function(){
       horizontalWave.start();
@@ -76,6 +88,10 @@ $(function () {
     $('#button-2').click(function(){
       verticalWave.start();
     });
+
+    $('#button-3').click(function(){
+      isRotating = !isRotating;
+    })
 
 
     function FloorSquare(size, x, y, z){
@@ -172,11 +188,12 @@ $(function () {
   	function render() {
   		requestAnimationFrame(render);
 
+      // floor color waves
       verticalWave.step();
       horizontalWave.step();
 
-
-      if(!isDragging){
+      // cube rotation, pause when dragging
+      if(!isDragging && isRotating && id == 'output'){
         cube.rotation.y += that.rotationSpeedY;
         cube.rotation.x += that.rotationSpeedX;
       }
@@ -184,17 +201,25 @@ $(function () {
   		renderer.render(scene, camera);
   	};
 
-    this.updateRotationX = function(val){
+    this.updateSelfPosition = function(rotation){
+      cube.rotation = rotation;
+    }
+
+    // only called for output canvas
+    this.updateRotationX = function(val, inputType){
       let newVal;
 
-      switch(id){
-        case "input-cube":
+      switch(inputType){
+        case "input-slider":
           // receiving from slider
           newVal = THREE.Math.mapLinear(val, 0, 100, 0, Math.PI);
           break;
-        case "output":
+        case "input-cube":
           // receiving from other cube
           newVal = THREE.Math.mapLinear(val, 0, 178, 0, Math.PI);
+          break;
+        case "input-orientation":
+          newVal = THREE.Math.mapLinear(val, 0, 5, 0, Math.PI);
           break;
       }
 
@@ -202,14 +227,14 @@ $(function () {
     }
 
     // create a grid
-    var gridSize = 1000;
-    var gridDivisions = 10;
+    var gridSize = 400;
+    var gridDivisions = 5;
 
     var gridHelper = new THREE.GridHelper( gridSize, gridDivisions, 0xff0000, 0xff0000);
     gridHelper.position.y = -100;
 		gridHelper.position.x = 0;
     // gridHelper.geometry.rotateX( Math.PI / 10 );
-    if(id == 'output'){
+    if(id == 'input-cube' || id == 'input-orientation'){
       scene.add( gridHelper );
     }
 
@@ -234,38 +259,69 @@ $(function () {
 
     const renderArea = renderer.domElement;
 
-    renderArea.addEventListener('mousedown', (e) => {
+
+    ['mousedown', 'touchstart'].forEach(function(e) {
+      renderArea.addEventListener(e, function(){
         isDragging = true;
+      });
+    });
+
+    renderArea.addEventListener('touchmove', (e) => {
+      let touches = e.changedTouches;
+      let touch = touches[0];
+
+      // could try clientX if something's buggy
+      handleMove(touch.pageX, touch.pageY);
     });
 
     renderArea.addEventListener('mousemove', (e) => {
-        var deltaMove = {
-            x: e.offsetX-previousMousePosition.x,
-            y: e.offsetY-previousMousePosition.y
-        };
-
-        if(isDragging) {
-            let deltaRotationQuaternion = new THREE.Quaternion().
-            setFromEuler(
-                new THREE.Euler(toRadians(deltaMove.y * 1), toRadians(deltaMove.x * 1), 0, 'XYZ')
-            );
-
-            cube.quaternion.multiplyQuaternions(deltaRotationQuaternion, cube.quaternion);
-
-            if(id == "input-cube"){
-              canvas2.updateRotationX(toDegrees(cube.rotation.x));
-            }
-        }
-
-        previousMousePosition = {
-            x: e.offsetX,
-            y: e.offsetY
-        };
+        handleMove(e.offsetX, e.offsetY);
+        console.log(e);
     });
 
-    document.addEventListener('mouseup', (e) => {
+    function handleMove(offsetX, offsetY){
+      var deltaMove = {
+          x: offsetX-previousMousePosition.x,
+          y: offsetY-previousMousePosition.y
+      };
+
+      if(isDragging) {
+          let deltaRotationQuaternion = new THREE.Quaternion().
+          setFromEuler(
+              new THREE.Euler(toRadians(deltaMove.y * 1), toRadians(deltaMove.x * 1), 0, 'XYZ')
+          );
+
+          cube.quaternion.multiplyQuaternions(deltaRotationQuaternion, cube.quaternion);
+
+          if(id == "input-cube"){
+            canvasOutput.updateRotationX(toDegrees(cube.rotation.x), id);
+          }
+      }
+
+      previousMousePosition = {
+          x: offsetX,
+          y: offsetY
+      };
+    }
+
+    ['mouseup', 'touchend'].forEach(function(e) {
+      renderArea.addEventListener(e, function(){
         isDragging = false;
+      });
     });
+
+
+    if(id == 'input-orientation'){
+      function onDeviceOrientationChangeEvent(event) {
+        console.log(event.alpha, event.beta);
+        let alpha = event.alpha;
+        let rad = THREE.Math.degToRad(alpha);
+
+        canvasOutput.updateRotationX(rad, 'input-orientation');
+      }
+
+      window.addEventListener('deviceorientation', onDeviceOrientationChangeEvent, false);
+    }
 
 
   }
