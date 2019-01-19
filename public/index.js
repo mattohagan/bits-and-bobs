@@ -1,26 +1,27 @@
 $(function () {
   var socket = io();
-  let canvas = new Canvas(200, 200, "input-cube");
-  let canvas2 = new Canvas(200, 200, "output")
+
+  let canvasWidth = 300;
+  let canvasHeight = 300;
+  let canvas = new Canvas(canvasWidth, canvasHeight, "input-cube");
+  let canvas2 = new Canvas(canvasWidth, canvasHeight, "output")
 
   let slider = document.getElementById('slider');
   slider.addEventListener('input', function(){
     let val = $('#slider').val();
-    console.log(val);
     socket.emit('slider update', val);
     canvas.updateRotationX(val);
   });
 
   socket.on('slider update', function(val){
-    console.log(val);
     $('#slider').val(val);
     canvas.updateRotationX(val);
   });
 
 
   function Canvas(height, width, id){
-    this.rotationX = 0.01;
-    this.rotationY = 0.01;
+    this.rotationSpeedX = 0.01;
+    this.rotationSpeedY = 0.01;
 
 
 
@@ -31,16 +32,12 @@ $(function () {
   	renderer.setSize(width, height);
   	document.getElementById(id).appendChild(renderer.domElement);
 
-    let boxSize = 500;
+    let boxSize = 200;
   	var geometry = new THREE.BoxGeometry(boxSize, boxSize, boxSize, 1, 1, 1);
-    // var wireframe_material = new THREE.MeshBasicMaterial( { color: 0xffff, wireframe: true, wireframe_linewidth: 2 } );
-    // // new THREE.Mesh( new Cube( 100, 100,100 ), [ new THREE.MeshBasicMaterial( { color: 0xff0000 } ), wireframe_material ] );
-    //
+
   	var material = new THREE.MeshBasicMaterial({color: 0xffffff});
   	var cube = new THREE.Mesh(geometry, material);
-    // var cube = new THREE.Mesh( geometry, [ new THREE.MeshBasicMaterial( { color: 0xff0000 } ), new THREE.MeshBasicMaterial( { color: 0x000000, wireframe: true, wireframe_linewidth: 10 } ) ] );
-
-  	scene.add(cube);
+    cube.position.y = 75;
 
     var geo = new THREE.EdgesGeometry( cube.geometry );
     var mat = new THREE.LineBasicMaterial( { color: 0x000000, linewidth: 10} );
@@ -48,18 +45,140 @@ $(function () {
     wireframe.renderOrder = 1; // make sure wireframes are rendered 2nd
     cube.add( wireframe );
 
+  	scene.add(cube);
+
+
+    // to traverse a square
+    let divisions = 5;
+    let y = -100;
+    let floorSize = 100;
+    let initial = (divisions / 2) * floorSize * -1;
+    initial += (floorSize / 2) // offset since boxes are created from center
+
+    let floorPieces = [];
+    for(let i = 0; i < divisions; i++){
+      let x = initial + (i * floorSize)
+      let row = [];
+      for(let j = 0; j < divisions; j++){
+        let z = initial + (j * floorSize);
+        let piece = new FloorSquare(floorSize, x, y, z);
+        row.push(piece);
+
+        scene.add(piece.mesh);
+      }
+      floorPieces.push(row);
+    }
+
+    $('#button-1').click(function(){
+      horizontalWave.start();
+    });
+
+    $('#button-2').click(function(){
+      verticalWave.start();
+    });
+
+
+    function FloorSquare(size, x, y, z){
+      let depth = 20;
+
+      // create piece
+      var material = new THREE.MeshBasicMaterial({color: 0xffffff});
+      let floorGeometry = new THREE.BoxGeometry(size, depth, size, 1, 1, 1);
+      let floorSquare = new THREE.Mesh(floorGeometry, material);
+
+      // position piece
+      // floorSquare.rotation.x = Math.PI/ 10;
+      floorSquare.position.x = x;
+      floorSquare.position.z = z;
+      floorSquare.position.y = y;
+
+      // add outlines
+      let floorGeo = new THREE.EdgesGeometry( floorSquare.geometry );
+      var mat = new THREE.LineBasicMaterial( { color: 0x000000, linewidth: 10} );
+      let floorWireframe = new THREE.LineSegments(floorGeo, mat);
+      floorSquare.add( floorWireframe );
+
+      this.setColor = function(color){
+        this.mesh.material.color.setHex( color );
+      }
+
+      this.mesh = floorSquare;
+    }
+
+    let horizontalWave = new ColorWave(floorPieces, 'horizontal', 0x0000ff);
+    let verticalWave = new ColorWave(floorPieces, 'vertical', 0xff0000);
+
+    function ColorWave(piecesArray, direction, waveColor){
+      let defaultColor = 0xffffff;
+      let rowInterval = 0;
+      let speed = 0.1;
+      let lastRow = -1;
+
+      this.direction = direction;
+
+      this.isRunning = false;
+
+      this.start = function(){
+        this.isRunning = true;
+      }
+
+      this.step = function(){
+        if(this.isRunning){
+          rowInterval += speed;
+          let row = Math.floor(rowInterval);
+
+          if(row != lastRow){
+            lastRow = row;
+
+            // run through row and set colors
+            for(let i = 0; i < piecesArray.length; i++){
+
+              // only reset previous row after first row
+              if (row != 0){
+                this.getMesh(row - 1, i).setColor(defaultColor);
+              }
+
+              // default behavior expect for last clearing run
+              if (row != floorPieces.length){
+                this.getMesh(row, i).setColor(waveColor);
+              }
+            }
+
+            // reset animation variables
+            if(row == piecesArray.length){
+              this.isRunning = false;
+              lastRow = -1;
+              rowInterval = 0;
+            }
+          }
+        }
+      }
+
+      this.getMesh = function(i, j){
+        if(direction == 'horizontal'){
+          return piecesArray[i][j];
+        } else if (direction == 'vertical'){
+          return piecesArray[j][i];
+        }
+      }
+    }
+
+
     camera.position.z = 1000;
+    camera.position.y = 300;
 
     // fix for scoping 'this'
     let that = this;
   	function render() {
   		requestAnimationFrame(render);
 
-  	  // cube.rotation.x = that.rotationX;
-  		// cube.rotation.y += that.rotationY;
+      verticalWave.step();
+      horizontalWave.step();
+
 
       if(!isDragging){
-        cube.rotation.y = that.rotationX;
+        cube.rotation.y += that.rotationSpeedY;
+        cube.rotation.x += that.rotationSpeedX;
       }
 
   		renderer.render(scene, camera);
@@ -76,15 +195,23 @@ $(function () {
         case "output":
           // receiving from other cube
           newVal = THREE.Math.mapLinear(val, 0, 178, 0, Math.PI);
-          console.log(newVal);
           break;
       }
 
-      // console.log(sliderVal);
-      this.rotationX = newVal;
+      cube.rotation.x = newVal;
     }
 
+    // create a grid
+    var gridSize = 1000;
+    var gridDivisions = 10;
 
+    var gridHelper = new THREE.GridHelper( gridSize, gridDivisions, 0xff0000, 0xff0000);
+    gridHelper.position.y = -100;
+		gridHelper.position.x = 0;
+    // gridHelper.geometry.rotateX( Math.PI / 10 );
+    if(id == 'output'){
+      scene.add( gridHelper );
+    }
 
   	render();
 
@@ -126,7 +253,6 @@ $(function () {
             cube.quaternion.multiplyQuaternions(deltaRotationQuaternion, cube.quaternion);
 
             if(id == "input-cube"){
-              console.log(toDegrees(cube.rotation.x));
               canvas2.updateRotationX(toDegrees(cube.rotation.x));
             }
         }
