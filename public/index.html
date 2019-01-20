@@ -6,9 +6,20 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="public/jquery.min.js"></script>
     <script src='public/three.min.js'></script>
+    <script src="public/p5.min.js"></script>
   </head>
   <body>
+    <div id='container2D'></div>
     <div id='output'></div>
+    <div>
+      X: <span id='x'>__</span>
+    </div>
+    <div>
+      Y: <span id='y'>__</span>
+    </div>
+    <div>
+      Z: <span id='z'>__</span>
+    </div>
     <div class='controls'>
       <div class='controls_row'>
         <input type='range' id="input-slider" />

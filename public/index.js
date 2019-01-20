@@ -10,16 +10,78 @@ $(function () {
   let canvas = new Canvas(controlWidth, controlHeight, "input-cube");
   let canvas3 = new Canvas(controlWidth, controlHeight, "input-orientation");
 
-  let slider = document.getElementById('input-slider');
-  slider.addEventListener('input', function(){
-    let val = $('#input-slider').val();
-    socket.emit('slider update', val);
-    canvasOutput.updateRotationX(val, 'input-slider');
-  });
+
+  // to use for 2D canvas
+	var sketch2D = function(p){
+		let buffer, size, xOrigin, yOrigin, ySize;
+    let staticVariation = 7;
+
+		p.setup = function(){
+			p.createCanvas(400, 560);
+			buffer = 100;
+
+			// vars for static block
+			xSize = 50;
+			ySize = xSize * 4;
+			xOrigin = Math.ceil(p.random(25, 160) / 10) * 10;
+			yOrigin = xOrigin * 5;
+
+			// vars for circle
+			let xEllipse = p.random(0, p.width);
+			let yEllipse = p.random(0, p.height);
+			size = p.random(100, 400);
+
+			// create circle only once
+			p.fill(0, 0, 255);
+			p.strokeWeight(0);
+			// p.ellipse(xEllipse, yEllipse, size);
+		}
+
+		p.draw = function(){
+      p.clear();
+
+			// update static block
+			p.loadPixels();
+			for(var x = xOrigin; x < xOrigin + xSize; x++){
+				for(var y = yOrigin; y < yOrigin + ySize; y++){
+				  var r = p.random(255);
+
+				  // this is witchcraft
+				  var index = (x + (y * ySize)) * staticVariation;
+
+				  p.pixels[index + 0] = r;
+				  p.pixels[index + 1] = r;
+				  p.pixels[index + 2] = r;
+				  p.pixels[index + 3] = 255;
+				}
+			}
+			p.updatePixels();
+		}
+
+    function updateStaticVar(val){
+      // p.
+      staticVariation = Math.floor(THREE.Math.mapLinear(val, 0, 100, 1, 24));
+    }
+
+    let slider = document.getElementById('input-slider');
+    slider.addEventListener('input', function(){
+      let val = $('#input-slider').val();
+      socket.emit('slider update', val);
+      // canvasOutput.updateRotationX(val, 'input-slider');
+      updateStaticVar(val);
+    });
+	}
+
+
+  // create p5 instances
+	let sketch2 = new p5(sketch2D, 'container2D');
+
+
 
   socket.on('slider update', function(val){
     $('#input-slider').val(val);
     canvasOutput.updateRotationX(val, 'input-slider');
+    // sketch2D.updateStaticVar(val);
   });
 
 
@@ -57,16 +119,19 @@ $(function () {
     function addFloor(){
       // to traverse a square
       let divisions = 5;
-      let y = -100;
+      let margin = 20;
       let floorSize = 100;
+      let y = -100;
+
       let initial = (divisions / 2) * floorSize * -1;
-      initial += (floorSize / 2) // offset since boxes are created from center
+      initial += (floorSize / 2); // offset since boxes are created from center
+      initial -= ((margin * (divisions - 1)) / 2);
 
       for(let i = 0; i < divisions; i++){
-        let x = initial + (i * floorSize)
+        let x = initial + (i * floorSize) + (i * margin);
         let row = [];
         for(let j = 0; j < divisions; j++){
-          let z = initial + (j * floorSize);
+          let z = initial + (j * floorSize) + (j * margin);
           let piece = new FloorSquare(floorSize, x, y, z);
           row.push(piece);
 
@@ -95,7 +160,7 @@ $(function () {
 
 
     function FloorSquare(size, x, y, z){
-      let depth = 20;
+      let depth = 1;
 
       // create piece
       var material = new THREE.MeshBasicMaterial({color: 0xffffff});
@@ -110,7 +175,7 @@ $(function () {
 
       // add outlines
       let floorGeo = new THREE.EdgesGeometry( floorSquare.geometry );
-      var mat = new THREE.LineBasicMaterial( { color: 0x000000, linewidth: 10} );
+      var mat = new THREE.LineBasicMaterial( { color: 0x0000ff, linewidth: 10} );
       let floorWireframe = new THREE.LineSegments(floorGeo, mat);
       floorSquare.add( floorWireframe );
 
@@ -205,6 +270,18 @@ $(function () {
       cube.rotation = rotation;
     }
 
+    this.updateRotation = function(x, y, z, inputType){
+      switch(inputType){
+        case "input-orientation":
+          // receiving from slider
+          cube.rotation.x = x;
+          cube.rotation.y = y;
+          cube.rotation.z = z;
+          // newVal = THREE.Math.mapLinear(val, 0, 100, 0, Math.PI);
+          break;
+      }
+    }
+
     // only called for output canvas
     this.updateRotationX = function(val, inputType){
       let newVal;
@@ -276,7 +353,6 @@ $(function () {
 
     renderArea.addEventListener('mousemove', (e) => {
         handleMove(e.offsetX, e.offsetY);
-        console.log(e);
     });
 
     function handleMove(offsetX, offsetY){
@@ -311,20 +387,37 @@ $(function () {
     });
 
 
+    // device orientation input
     if(id == 'input-orientation'){
       function onDeviceOrientationChangeEvent(event) {
         console.log(event.alpha, event.beta);
-        let alpha = event.alpha;
-        let rad = THREE.Math.degToRad(alpha);
 
-        canvasOutput.updateRotationX(rad, 'input-orientation');
+        let alpha = event.alpha;
+        let beta = event.beta;
+        let gamma = event.gamma;
+        let x = THREE.Math.degToRad(beta);
+        let y = THREE.Math.degToRad(gamma);
+        let z = THREE.Math.degToRad(alpha);
+
+        $('#x').text(beta);
+        $('#y').text(gamma);
+        $('#z').text(alpha);
+
+        cube.rotation.x = x;
+        cube.rotation.y = y;
+        cube.rotation.z = z;
+
+        canvasOutput.updateRotation(x, y, z, 'input-orientation');
       }
 
-      window.addEventListener('deviceorientation', onDeviceOrientationChangeEvent, false);
+      window.addEventListener('deviceorientation', onDeviceOrientationChangeEvent);
     }
 
 
   }
+
+
+
 
 
 });
