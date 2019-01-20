@@ -4,6 +4,10 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var port = process.env.PORT || 3000;
 
+let shelf = new Shelf(
+  ['input-orientation', 'input-slider', 'input-cube']
+);
+
 app.get('/', function(req, res){
   res.sendFile(__dirname + '/public/index.html');
 });
@@ -19,14 +23,50 @@ http.listen(port, function(){
 });
 
 io.on('connection', function(socket){
-  console.log('connected');
 
-  socket.on('slider update', function(val){
-    console.log(val);
-    io.emit('slider update', val);
+  socket.on('getController', function(){
+    let controller = shelf.pickController(socket.id);
+    console.log(socket.id);
+    console.log(controller);
+    socket.emit('controller', controller);
+
+    console.log('a friend is now using: ' + controller);
+  });
+
+  socket.on('input', function(inputObj){
+    io.emit('input', inputObj);
+  });
+
+  socket.on('disconnect', function(){
+    shelf.putControllerBack(socket.id);
+
+    console.log('disconnected');
   });
 });
 
-io.on('disconnect', function(socket){
-  console.log('disconnected');
-});
+
+
+function Shelf(availableControllers){
+  let friends = {};
+
+  // pick up a controller from the shelf
+  this.pickController = function(id){
+    let controller;
+    if(availableControllers.length > 0){
+      let num = Math.floor(Math.random() * ((availableControllers.length - 1) - 0) + 0);
+      controller = availableControllers[num];
+      friends[id] = controller;
+      availableControllers.splice(num, 1);
+    } else {
+      controller = 'NA';
+    }
+
+    return controller;
+  }
+
+  // put the friends controller back
+  this.putControllerBack = function(id){
+    availableControllers.push(friends[id]);
+    delete friends[id];
+  }
+}

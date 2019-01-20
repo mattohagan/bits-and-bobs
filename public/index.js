@@ -1,20 +1,42 @@
 $(function () {
   var socket = io();
 
+  let canvas, canvas3, canvasOutput, sketch2;
   let outputWidth = 600;
   let outputHeight = 600;
-  let canvasOutput = new Canvas(outputWidth, outputHeight, "output");
-
   let controlWidth = 300;
   let controlHeight = 300;
-  let canvas = new Canvas(controlWidth, controlHeight, "input-cube");
-  let canvas3 = new Canvas(controlWidth, controlHeight, "input-orientation");
 
+
+  if(pageType == 'phone'){
+    socket.emit('getController');
+  }
+
+  let staticVariation = 7;
+
+  function updateStaticVar(val){
+    staticVariation = Math.floor(THREE.Math.mapLinear(val, 0, 100, 1, 24));
+  }
+
+  function sliderListener(){
+    let slider = document.getElementById('input-slider');
+    slider.addEventListener('input', function(){
+      console.log('hello');
+      let val = $('#input-slider').val();
+      let input = {
+        type: 'input-slider',
+        value: val
+      }
+
+      socket.emit('input', input);
+      // canvasOutput.updateRotationX(val, 'input-slider');
+      updateStaticVar(val);
+    });
+  }
 
   // to use for 2D canvas
 	var sketch2D = function(p){
 		let buffer, size, xOrigin, yOrigin, ySize;
-    let staticVariation = 7;
 
 		p.setup = function(){
 			p.createCanvas(400, 560);
@@ -57,31 +79,63 @@ $(function () {
 			}
 			p.updatePixels();
 		}
-
-    function updateStaticVar(val){
-      // p.
-      staticVariation = Math.floor(THREE.Math.mapLinear(val, 0, 100, 1, 24));
-    }
-
-    let slider = document.getElementById('input-slider');
-    slider.addEventListener('input', function(){
-      let val = $('#input-slider').val();
-      socket.emit('slider update', val);
-      // canvasOutput.updateRotationX(val, 'input-slider');
-      updateStaticVar(val);
-    });
 	}
 
 
-  // create p5 instances
-	let sketch2 = new p5(sketch2D, 'container2D');
+
+  let inputControls = {
+    'input-slider': {
+      update: function(val){
+        $('#input-slider').val(val);
+        if(pageType == 'all'){
+          updateStaticVar(val);
+        }
+      },
+      render: function(){
+        let el = "<input type='range' id='input-slider' />";
+        $('#controls').append(el);
+        sliderListener();
+      }
+    },
+    'input-cube': {
+      update: function(val){
+        if(pageType == 'all'){
+          console.log(val);
+          canvasOutput.updateRotationX(val, 'input-cube');
+        }
+      },
+      render: function(){
+        let el = "<div id='input-cube'></div>";
+        $('#controls').append(el);
+        canvas = new Canvas(controlWidth, controlHeight, "input-cube");
+      }
+    },
+    'input-orientation': {
+      update: function(val){
+        canvas3.updateRotation(val, 'input-orientation');
+        if(pageType == 'all'){
+          canvasOutput.updateRotation(val, 'input-orientation');
+        }
+      },
+      render: function(){
+        let el = "<div id='input-orientation'></div>";
+        $('#controls').append(el);
+        canvas3 = new Canvas(controlWidth, controlHeight, "input-orientation");
+      }
+    }
+  }
 
 
+  socket.on('input', function(input){
+    inputControls[input.type].update(input.value);
+  });
 
-  socket.on('slider update', function(val){
-    $('#input-slider').val(val);
-    canvasOutput.updateRotationX(val, 'input-slider');
-    // sketch2D.updateStaticVar(val);
+  socket.on('controller', function(controller){
+    console.log(controller);
+    if(pageType == 'phone'){
+      console.log(inputControls[controller]);
+      inputControls[controller].render();
+    }
   });
 
 
@@ -361,7 +415,7 @@ $(function () {
           y: offsetY-previousMousePosition.y
       };
 
-      if(isDragging) {
+      if(isDragging && id == 'input-cube') {
           let deltaRotationQuaternion = new THREE.Quaternion().
           setFromEuler(
               new THREE.Euler(toRadians(deltaMove.y * 1), toRadians(deltaMove.x * 1), 0, 'XYZ')
@@ -369,8 +423,15 @@ $(function () {
 
           cube.quaternion.multiplyQuaternions(deltaRotationQuaternion, cube.quaternion);
 
-          if(id == "input-cube"){
-            canvasOutput.updateRotationX(toDegrees(cube.rotation.x), id);
+          let val = toDegrees(cube.rotation.x);
+          let input = {
+            type: 'input-cube',
+            value: val
+          };
+
+          socket.emit('input', input);
+          if(pageType == 'all'){
+            canvasOutput.updateRotationX(val, id);
           }
       }
 
@@ -390,7 +451,6 @@ $(function () {
     // device orientation input
     if(id == 'input-orientation'){
       function onDeviceOrientationChangeEvent(event) {
-        console.log(event.alpha, event.beta);
 
         let alpha = event.alpha;
         let beta = event.beta;
@@ -399,15 +459,27 @@ $(function () {
         let y = THREE.Math.degToRad(gamma);
         let z = THREE.Math.degToRad(alpha);
 
-        $('#x').text(beta);
-        $('#y').text(gamma);
-        $('#z').text(alpha);
+        $('#x').text(x);
+        $('#y').text(y);
+        $('#z').text(z);
 
+        // update control's cube
         cube.rotation.x = x;
         cube.rotation.y = y;
         cube.rotation.z = z;
 
+        let inputObj = {
+          x: x,
+          y: y,
+          z: z
+        }
+
+        // update output cube
         canvasOutput.updateRotation(x, y, z, 'input-orientation');
+        socket.emit('input', {
+          type: 'input-orientation',
+          value: inputObj
+        });
       }
 
       window.addEventListener('deviceorientation', onDeviceOrientationChangeEvent);
@@ -417,6 +489,21 @@ $(function () {
   }
 
 
+  window.addEventListener('beforeunload', function () {
+     socket.disconnect();
+  });
+
+
+  if (pageType == 'all'){
+
+    canvasOutput = new Canvas(outputWidth, outputHeight, "output");
+    canvas = new Canvas(controlWidth, controlHeight, "input-cube");
+    canvas3 = new Canvas(controlWidth, controlHeight, "input-orientation");
+
+    // create p5 instances
+  	sketch2 = new p5(sketch2D, 'container2D');
+    sliderListener();
+  }
 
 
 

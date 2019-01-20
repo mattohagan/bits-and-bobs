@@ -2,14 +2,16 @@
 <html>
   <head>
     <title>Bits and bobs</title>
-    <!-- <style src='public/index.css'></style> -->
-    <script src="public/jquery.min.js"></script>
+    <link rel='stylesheet' href='public/index.css'></style>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="public/jquery.min.js"></script>
+    <script src='public/three.min.js'></script>
+    <script src="public/p5.min.js"></script>
   </head>
   <body>
-    <input type='range' id="slider" />
+    <div class='controls' id='controls'></div>
 
-
-    <script src='public/phone.js'></script>
+    <script> pageType = 'phone'; </script>
+    <script src='public/index.js'></script>
   </body>
 </html>
