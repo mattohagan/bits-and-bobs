@@ -1,38 +1,36 @@
+
+// TODO
+// - Create prototype of instrument builder
+// - Put output visualization code into its own script
+// - Create a single source of truth for instrument rendering functions
+//
+
+// ideas -> collective inputs to toggle between two things
+// increase of height incrementally moves toggle between text and emoji
+// work together to change bigger things in the environment
+//
+// lower values create calmer environment
+// higher values create chaotic environment
+// what happens in the middle!?
+
+// bits and bobbles
+
+
+
+// proces for creating a controller
+// 1. add to inputControls in Router with update and render functions
+// 2. add listener to call router.input in render function or separate class
+// 3. add route to affect one of the keeper variables
+
+
 $(function () {
   var socket = io();
 
-  let canvas, canvas3, canvasOutput, sketch2;
-  let outputWidth = 600;
-  let outputHeight = 600;
+  let canvas, canvas3, sketch2;
   let controlWidth = 300;
   let controlHeight = 300;
 
-
-  if(pageType == 'phone'){
-    socket.emit('getController');
-  }
-
-  let staticVariation = 7;
-
-  function updateStaticVar(val){
-    staticVariation = Math.floor(THREE.Math.mapLinear(val, 0, 100, 1, 24));
-  }
-
-  function sliderListener(){
-    let slider = document.getElementById('input-slider');
-    slider.addEventListener('input', function(){
-      console.log('hello');
-      let val = $('#input-slider').val();
-      let input = {
-        type: 'input-slider',
-        value: val
-      }
-
-      socket.emit('input', input);
-      // canvasOutput.updateRotationX(val, 'input-slider');
-      updateStaticVar(val);
-    });
-  }
+  let router = new Router();
 
   // to use for 2D canvas
 	var sketch2D = function(p){
@@ -69,7 +67,7 @@ $(function () {
 				  var r = p.random(255);
 
 				  // this is witchcraft
-				  var index = (x + (y * ySize)) * staticVariation;
+				  var index = (x + (y * ySize)) * keeper.static.variation;
 
 				  p.pixels[index + 0] = r;
 				  p.pixels[index + 1] = r;
@@ -83,60 +81,127 @@ $(function () {
 
 
 
-  let inputControls = {
-    'input-slider': {
-      update: function(val){
-        $('#input-slider').val(val);
-        if(pageType == 'all'){
-          updateStaticVar(val);
+
+  function Router(){
+    let controls = {};
+
+    let inputControls = {
+      'input-slider': {
+        update: function(val){
+          let elId = 'input-slider';
+          $('#' + elId).val(val);
+          if(page == 'all'){
+            keeper.static.updateVariation(val);
+          }
+        },
+        render: function(parentId){
+          let elId = 'input-slider';
+          let el = $("<input type='range' id='" + elId + "' />");
+          el.on('input', function(){
+            let val = $('#'+elId).val();
+            let input = {
+              type: elId,
+              value: val
+            }
+
+            router.input(input);
+          });
+
+          $('#' + parentId).append(el);
         }
       },
-      render: function(){
-        let el = "<input type='range' id='input-slider' />";
-        $('#controls').append(el);
-        sliderListener();
-      }
-    },
-    'input-cube': {
-      update: function(val){
-        if(pageType == 'all'){
+
+      'input-cube': {
+        update: function(val){
+          controls['input-cube'].updateRotation(val.rotation.x, val.rotation.y, val.rotation.z);
+
+          if(page == 'all'){
+            keeper.mainCube.updateRotation(val.rotation);
+          }
+        },
+        render: function(parentId){
+          let el = "<div id='input-cube'></div>";
+          $('#' + parentId).append(el);
+          console.log('here');
+          controls['input-cube'] = new Canvas(controlWidth, controlHeight, "input-cube");
+        }
+      },
+
+      'input-orientation': {
+        update: function(val){
           console.log(val);
-          canvasOutput.updateRotationX(val, 'input-cube');
+          canvas3.updateRotation(val.x, val.y, val.z, 'input-orientation');
+
+          if(page == 'all'){
+            output.updateRotation(val.x, val.y, val.z, 'input-orientation');
+          }
+        },
+        render: function(parentId){
+          let el = "<div id='input-orientation'></div>";
+          $('#' + parentId).append(el);
+          canvas3 = new Canvas(controlWidth, controlHeight, "input-orientation");
         }
       },
-      render: function(){
-        let el = "<div id='input-cube'></div>";
-        $('#controls').append(el);
-        canvas = new Canvas(controlWidth, controlHeight, "input-cube");
+
+      'NA': {
+        render: function(parentId){
+          $(document).append('<b>Try refreshing</b><br>No controls available');
+        }
       }
-    },
-    'input-orientation': {
-      update: function(val){
-        canvas3.updateRotation(val, 'input-orientation');
-        if(pageType == 'all'){
-          canvasOutput.updateRotation(val, 'input-orientation');
-        }
-      },
-      render: function(){
-        let el = "<div id='input-orientation'></div>";
-        $('#controls').append(el);
-        canvas3 = new Canvas(controlWidth, controlHeight, "input-orientation");
+    }
+
+    // fired on both original value update and on all visuals
+    this.input = function(inputObj){
+      if(page == 'phone'){
+        socket.emit('input', inputObj);
+      }
+
+      inputControls[inputObj.type].update(inputObj.value);
+    }
+
+    this.renderAllControls = function(){
+      let controls = ['input-slider', 'input-cube'];
+      for(let i = 0; i < controls.length; i++){
+        inputControls[controls[i]].render('controls');
       }
     }
   }
 
 
+  // receive input from server
   socket.on('input', function(input){
-    inputControls[input.type].update(input.value);
+    router.input()
   });
 
-  socket.on('controller', function(controller){
-    console.log(controller);
-    if(pageType == 'phone'){
-      console.log(inputControls[controller]);
-      inputControls[controller].render();
+  // receive controller assignment
+  socket.on('controller', function(controllerType){
+    if(page == 'phone'){
+      renderInstrument(controllerType);
     }
   });
+
+  function renderInstrument(type){
+    // NOTE type is currently unused
+    //inputControls[type].render();
+
+
+    $('#adjust-1').on('input', function(ev){
+      console.log(this.value);
+      console.log(ev.target.value);
+      console.log($('#adjust-1').val());
+    });
+
+  }
+
+
+// take input
+// feed into machine
+// machine takes input and input type
+// routes the input to a render function based on input type
+// render function takes input and adjusts necessary values
+//
+
+
 
 
   function Canvas(width, height, id){
@@ -147,9 +212,12 @@ $(function () {
 
     var scene = new THREE.Scene();
   	var camera = new THREE.PerspectiveCamera(75, width/height, 1, 10000);
+    camera.position.z = 1000;
+    camera.position.y = 300;
 
   	var renderer = new THREE.WebGLRenderer({ alpha: true });
   	renderer.setSize(width, height);
+    console.log(document.getElementById(id));
   	document.getElementById(id).appendChild(renderer.domElement);
 
     let boxSize = 200;
@@ -168,155 +236,10 @@ $(function () {
   	scene.add(cube);
 
 
-
-    let floorPieces = [];
-    function addFloor(){
-      // to traverse a square
-      let divisions = 5;
-      let margin = 20;
-      let floorSize = 100;
-      let y = -100;
-
-      let initial = (divisions / 2) * floorSize * -1;
-      initial += (floorSize / 2); // offset since boxes are created from center
-      initial -= ((margin * (divisions - 1)) / 2);
-
-      for(let i = 0; i < divisions; i++){
-        let x = initial + (i * floorSize) + (i * margin);
-        let row = [];
-        for(let j = 0; j < divisions; j++){
-          let z = initial + (j * floorSize) + (j * margin);
-          let piece = new FloorSquare(floorSize, x, y, z);
-          row.push(piece);
-
-          scene.add(piece.mesh);
-        }
-        floorPieces.push(row);
-      }
-    }
-
-    if(id == 'output'){
-      addFloor();
-    }
-
-
-    $('#button-1').click(function(){
-      horizontalWave.start();
-    });
-
-    $('#button-2').click(function(){
-      verticalWave.start();
-    });
-
-    $('#button-3').click(function(){
-      isRotating = !isRotating;
-    })
-
-
-    function FloorSquare(size, x, y, z){
-      let depth = 1;
-
-      // create piece
-      var material = new THREE.MeshBasicMaterial({color: 0xffffff});
-      let floorGeometry = new THREE.BoxGeometry(size, depth, size, 1, 1, 1);
-      let floorSquare = new THREE.Mesh(floorGeometry, material);
-
-      // position piece
-      // floorSquare.rotation.x = Math.PI/ 10;
-      floorSquare.position.x = x;
-      floorSquare.position.z = z;
-      floorSquare.position.y = y;
-
-      // add outlines
-      let floorGeo = new THREE.EdgesGeometry( floorSquare.geometry );
-      var mat = new THREE.LineBasicMaterial( { color: 0x0000ff, linewidth: 10} );
-      let floorWireframe = new THREE.LineSegments(floorGeo, mat);
-      floorSquare.add( floorWireframe );
-
-      this.setColor = function(color){
-        this.mesh.material.color.setHex( color );
-      }
-
-      this.mesh = floorSquare;
-    }
-
-    let horizontalWave = new ColorWave(floorPieces, 'horizontal', 0x0000ff);
-    let verticalWave = new ColorWave(floorPieces, 'vertical', 0xff0000);
-
-    function ColorWave(piecesArray, direction, waveColor){
-      let defaultColor = 0xffffff;
-      let rowInterval = 0;
-      let speed = 0.1;
-      let lastRow = -1;
-
-      this.direction = direction;
-
-      this.isRunning = false;
-
-      this.start = function(){
-        this.isRunning = true;
-      }
-
-      this.step = function(){
-        if(this.isRunning){
-          rowInterval += speed;
-          let row = Math.floor(rowInterval);
-
-          if(row != lastRow){
-            lastRow = row;
-
-            // run through row and set colors
-            for(let i = 0; i < piecesArray.length; i++){
-
-              // only reset previous row after first row
-              if (row != 0){
-                this.getMesh(row - 1, i).setColor(defaultColor);
-              }
-
-              // default behavior expect for last clearing run
-              if (row != floorPieces.length){
-                this.getMesh(row, i).setColor(waveColor);
-              }
-            }
-
-            // reset animation variables
-            if(row == piecesArray.length){
-              this.isRunning = false;
-              lastRow = -1;
-              rowInterval = 0;
-            }
-          }
-        }
-      }
-
-      this.getMesh = function(i, j){
-        if(direction == 'horizontal'){
-          return piecesArray[i][j];
-        } else if (direction == 'vertical'){
-          return piecesArray[j][i];
-        }
-      }
-    }
-
-
-    camera.position.z = 1000;
-    camera.position.y = 300;
-
     // fix for scoping 'this'
     let that = this;
   	function render() {
   		requestAnimationFrame(render);
-
-      // floor color waves
-      verticalWave.step();
-      horizontalWave.step();
-
-      // cube rotation, pause when dragging
-      if(!isDragging && isRotating && id == 'output'){
-        cube.rotation.y += that.rotationSpeedY;
-        cube.rotation.x += that.rotationSpeedX;
-      }
-
   		renderer.render(scene, camera);
   	};
 
@@ -325,37 +248,11 @@ $(function () {
     }
 
     this.updateRotation = function(x, y, z, inputType){
-      switch(inputType){
-        case "input-orientation":
-          // receiving from slider
-          cube.rotation.x = x;
-          cube.rotation.y = y;
-          cube.rotation.z = z;
-          // newVal = THREE.Math.mapLinear(val, 0, 100, 0, Math.PI);
-          break;
-      }
+      cube.rotation.x = x;
+      cube.rotation.y = y;
+      cube.rotation.z = z;
     }
 
-    // only called for output canvas
-    this.updateRotationX = function(val, inputType){
-      let newVal;
-
-      switch(inputType){
-        case "input-slider":
-          // receiving from slider
-          newVal = THREE.Math.mapLinear(val, 0, 100, 0, Math.PI);
-          break;
-        case "input-cube":
-          // receiving from other cube
-          newVal = THREE.Math.mapLinear(val, 0, 178, 0, Math.PI);
-          break;
-        case "input-orientation":
-          newVal = THREE.Math.mapLinear(val, 0, 5, 0, Math.PI);
-          break;
-      }
-
-      cube.rotation.x = newVal;
-    }
 
     // create a grid
     var gridSize = 400;
@@ -426,13 +323,17 @@ $(function () {
           let val = toDegrees(cube.rotation.x);
           let input = {
             type: 'input-cube',
-            value: val
+            value: {
+              rotationX: val,
+              rotation: {
+                x: cube.rotation.x,
+                y: cube.rotation.y,
+                z: cube.rotation.z
+              }
+            }
           };
 
-          socket.emit('input', input);
-          if(pageType == 'all'){
-            canvasOutput.updateRotationX(val, id);
-          }
+          router.input(input);
       }
 
       previousMousePosition = {
@@ -475,7 +376,7 @@ $(function () {
         }
 
         // update output cube
-        canvasOutput.updateRotation(x, y, z, 'input-orientation');
+        output.updateRotation(x, y, z, 'input-orientation');
         socket.emit('input', {
           type: 'input-orientation',
           value: inputObj
@@ -494,15 +395,16 @@ $(function () {
   });
 
 
-  if (pageType == 'all'){
+  if (page == 'all'){
 
-    canvasOutput = new Canvas(outputWidth, outputHeight, "output");
-    canvas = new Canvas(controlWidth, controlHeight, "input-cube");
-    canvas3 = new Canvas(controlWidth, controlHeight, "input-orientation");
-
-    // create p5 instances
+    // create p5 instance
   	sketch2 = new p5(sketch2D, 'container2D');
-    sliderListener();
+
+    router.renderAllControls();
+  } else if (page == 'phone'){
+
+    // ask server for a controller
+    socket.emit('getController');
   }
 
 

@@ -46,7 +46,7 @@ io.on('connection', function(socket){
 
 
 
-function Shelf(availableControllers){
+function Shelf(availableObjects){
   let friends = {};
 
   // pick up a controller from the shelf
@@ -56,6 +56,7 @@ function Shelf(availableControllers){
       let num = Math.floor(Math.random() * ((availableControllers.length - 1) - 0) + 0);
       controller = availableControllers[num];
       friends[id] = controller;
+      console.log(availableControllers);
       availableControllers.splice(num, 1);
     } else {
       controller = 'NA';
@@ -66,7 +67,14 @@ function Shelf(availableControllers){
 
   // put the friends controller back
   this.putControllerBack = function(id){
-    availableControllers.push(friends[id]);
+    let addBack = friends[id];
+
+    if(addBack != undefined) {
+      availableControllers.push(friends[id]);
+    }
+
+    console.log('adding back:');
+    console.log(friends[id]);
     delete friends[id];
   }
 }
