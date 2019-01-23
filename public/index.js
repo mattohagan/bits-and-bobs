@@ -83,6 +83,7 @@ $(function () {
 
 
   function Router(){
+    let controlsParentId = 'controls';
     let controls = {};
 
     let inputControls = {
@@ -114,22 +115,22 @@ $(function () {
       'input-cube': {
         update: function(val){
           controls['input-cube'].updateRotation(val.rotation.x, val.rotation.y, val.rotation.z);
+          controls['input-cube'].updatePosition(val.position.x, val.position.y, val.position.z);
 
           if(page == 'all'){
             keeper.mainCube.updateRotation(val.rotation);
+            keeper.mainCube.updateScale(val.position.y);
           }
         },
         render: function(parentId){
           let el = "<div id='input-cube'></div>";
           $('#' + parentId).append(el);
-          console.log('here');
           controls['input-cube'] = new Canvas(controlWidth, controlHeight, "input-cube");
         }
       },
 
       'input-orientation': {
         update: function(val){
-          console.log(val);
           canvas3.updateRotation(val.x, val.y, val.z, 'input-orientation');
 
           if(page == 'all'){
@@ -140,6 +141,29 @@ $(function () {
           let el = "<div id='input-orientation'></div>";
           $('#' + parentId).append(el);
           canvas3 = new Canvas(controlWidth, controlHeight, "input-orientation");
+        }
+      },
+
+      'button-rotate': {
+        update: function(val){
+          if(page == 'all'){
+            keeper.mainCube.toggleRotating();
+          }
+        },
+        render: function(parentId){
+          let elId = 'button-rotate';
+          let el = $("<input type='button' id='" + elId + "' />");
+          el.on('click', function(){
+            let val = $('#'+elId).val();
+            let input = {
+              type: elId,
+              value: val
+            }
+
+            router.input(input);
+          });
+
+          $('#' + parentId).append(el);
         }
       },
 
@@ -160,38 +184,32 @@ $(function () {
     }
 
     this.renderAllControls = function(){
-      let controls = ['input-slider', 'input-cube'];
+      let controls = ['input-slider', 'input-cube', 'button-rotate'];
       for(let i = 0; i < controls.length; i++){
-        inputControls[controls[i]].render('controls');
+        inputControls[controls[i]].render(controlsParentId);
       }
+    }
+
+    this.renderControl = function(controlId){
+      inputControls[controlId].render(controlsParentId);
     }
   }
 
 
   // receive input from server
   socket.on('input', function(input){
-    router.input()
-  });
-
-  // receive controller assignment
-  socket.on('controller', function(controllerType){
-    if(page == 'phone'){
-      renderInstrument(controllerType);
+    if(page == 'all'){
+      router.input(input)
     }
   });
 
-  function renderInstrument(type){
-    // NOTE type is currently unused
-    //inputControls[type].render();
+  // receive controller assignment
+  socket.on('controller', function(controllerId){
+    if(page == 'phone'){
+      router.renderControl(controllerId);
+    }
+  });
 
-
-    $('#adjust-1').on('input', function(ev){
-      console.log(this.value);
-      console.log(ev.target.value);
-      console.log($('#adjust-1').val());
-    });
-
-  }
 
 
 // take input
@@ -217,7 +235,6 @@ $(function () {
 
   	var renderer = new THREE.WebGLRenderer({ alpha: true });
   	renderer.setSize(width, height);
-    console.log(document.getElementById(id));
   	document.getElementById(id).appendChild(renderer.domElement);
 
     let boxSize = 200;
@@ -243,14 +260,17 @@ $(function () {
   		renderer.render(scene, camera);
   	};
 
-    this.updateSelfPosition = function(rotation){
-      cube.rotation = rotation;
-    }
 
-    this.updateRotation = function(x, y, z, inputType){
+    this.updateRotation = function(x, y, z){
       cube.rotation.x = x;
       cube.rotation.y = y;
       cube.rotation.z = z;
+    }
+
+    this.updatePosition = function(x, y, z){
+      cube.position.x = x;
+      cube.position.y = y;
+      cube.position.z = z;
     }
 
 
@@ -313,12 +333,36 @@ $(function () {
       };
 
       if(isDragging && id == 'input-cube') {
+          // let deltaRotationQuaternion = new THREE.Quaternion().
+          // setFromEuler(
+          //     new THREE.Euler(toRadians(deltaMove.y * 1), toRadians(deltaMove.x * 1), 0, 'XYZ')
+          // );
+
+          // update rotation around Y axis
           let deltaRotationQuaternion = new THREE.Quaternion().
           setFromEuler(
-              new THREE.Euler(toRadians(deltaMove.y * 1), toRadians(deltaMove.x * 1), 0, 'XYZ')
+              new THREE.Euler(0, toRadians(deltaMove.x * 1), 0, 'XYZ')
           );
-
           cube.quaternion.multiplyQuaternions(deltaRotationQuaternion, cube.quaternion);
+
+
+          // update position and eventually size 
+
+          let direction = null;
+          if (offsetX == previousMousePosition.x && offsetY > previousMousePosition.y) {
+              direction = "down";
+          }
+          else if (offsetX == previousMousePosition.x && offsetY < previousMousePosition.y) {
+              direction = "up";
+          }
+
+          let moveDelta = 10;
+
+          if(direction == "up"){
+            cube.position.y += moveDelta;
+          } else if (direction == "down"){
+            cube.position.y -= moveDelta;
+          }
 
           let val = toDegrees(cube.rotation.x);
           let input = {
@@ -329,6 +373,11 @@ $(function () {
                 x: cube.rotation.x,
                 y: cube.rotation.y,
                 z: cube.rotation.z
+              },
+              position: {
+                x: cube.position.x,
+                y: cube.position.y,
+                z: cube.position.z
               }
             }
           };
@@ -347,6 +396,9 @@ $(function () {
         isDragging = false;
       });
     });
+
+
+
 
 
     // device orientation input

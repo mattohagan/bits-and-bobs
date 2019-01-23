@@ -5,7 +5,7 @@ var io = require('socket.io')(http);
 var port = process.env.PORT || 3000;
 
 let shelf = new Shelf(
-  ['input-orientation', 'input-slider', 'input-cube']
+  ['button-rotate', 'input-slider', 'input-cube']
 );
 
 app.get('/', function(req, res){
@@ -52,12 +52,12 @@ function Shelf(availableObjects){
   // pick up a controller from the shelf
   this.pickController = function(id){
     let controller;
-    if(availableControllers.length > 0){
-      let num = Math.floor(Math.random() * ((availableControllers.length - 1) - 0) + 0);
-      controller = availableControllers[num];
+    if(availableObjects.length > 0){
+      let num = Math.floor(Math.random() * ((availableObjects.length - 1) - 0) + 0);
+      controller = availableObjects[num];
       friends[id] = controller;
-      console.log(availableControllers);
-      availableControllers.splice(num, 1);
+      console.log(availableObjects);
+      availableObjects.splice(num, 1);
     } else {
       controller = 'NA';
     }
@@ -70,7 +70,7 @@ function Shelf(availableObjects){
     let addBack = friends[id];
 
     if(addBack != undefined) {
-      availableControllers.push(friends[id]);
+      availableObjects.push(friends[id]);
     }
 
     console.log('adding back:');

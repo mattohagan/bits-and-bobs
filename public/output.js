@@ -23,6 +23,18 @@ function Keeper(){
     },
     'updateRotation': function(rotation){
       that.mainCube.rotation = rotation;
+    },
+    isRotating: true,
+    toggleRotating: function(){
+      that.mainCube.isRotating = !that.mainCube.isRotating;
+    },
+    scale: 1,
+    updateScale: function(val){
+      console.log(val);
+      let base = 1;
+      let delta = 3;
+      that.mainCube.scale = THREE.Math.mapLinear(val, 0, 350, base, base + delta);
+      console.log(that.mainCube.scale);
     }
   }
 }
@@ -31,7 +43,6 @@ function Keeper(){
 function Output(width, height, id){
   this.rotationSpeedX = 0.01;
   this.rotationSpeedY = 0.01;
-  let isRotating = true;
 
 
   var scene = new THREE.Scene();
@@ -97,9 +108,6 @@ function Output(width, height, id){
     verticalWave.start();
   });
 
-  $('#button-3').click(function(){
-    isRotating = !isRotating;
-  });
 
 
   function FloorSquare(size, x, y, z){
@@ -202,17 +210,18 @@ function Output(width, height, id){
     cube.rotation.z = keeper.mainCube.rotation.z;
 
     // cube rotation
-    if(isRotating){
-      cube.rotation.y += that.rotationSpeedY;
-      cube.rotation.x += that.rotationSpeedX;
+    if(keeper.mainCube.isRotating){
+      keeper.mainCube.rotation.y += that.rotationSpeedY;
+      keeper.mainCube.rotation.x += that.rotationSpeedX;
     }
+
+    cube.scale.x = keeper.mainCube.scale;
+    cube.scale.y = keeper.mainCube.scale;
+    cube.scale.z = keeper.mainCube.scale;
 
     renderer.render(scene, camera);
   };
 
-  this.updateSelfPosition = function(rotation){
-    cube.rotation = rotation;
-  }
 
   this.updateRotation = function(x, y, z, inputType){
     cube.rotation.x = x;
