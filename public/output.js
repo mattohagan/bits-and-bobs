@@ -30,11 +30,9 @@ function Keeper(){
     },
     scale: 1,
     updateScale: function(val){
-      console.log(val);
       let base = 1;
       let delta = 3;
       that.mainCube.scale = THREE.Math.mapLinear(val, 0, 350, base, base + delta);
-      console.log(that.mainCube.scale);
     }
   }
 }
@@ -50,45 +48,85 @@ function Output(width, height, id){
   camera.position.z = 1000;
   camera.position.y = 300;
 
+
+  // LIGHTS!
+  var ambient = new THREE.AmbientLight(0xffffff, 0.8);
+  scene.add(ambient);
+  var spotlight = new THREE.SpotLight(0xffffff, 0.3);
+  spotlight.position.set(-500, 500, 500);
+  scene.add(spotlight);
+
+  // var lightHelper = new THREE.SpotLightHelper( spotlight, 5 );
+  // scene.add(lightHelper);
+
+  // could experiment with hemisphere light later
+  // var hemisphere = new THREE.HemisphereLight(0xff0000,0xffffff,0.9)
+  // scene.add(hemisphere);
+
+
+
+
   var renderer = new THREE.WebGLRenderer({ alpha: true });
   renderer.setSize(width, height);
   document.getElementById(id).appendChild(renderer.domElement);
 
-  let boxSize = 200;
-  var geometry = new THREE.BoxGeometry(boxSize, boxSize, boxSize, 1, 1, 1);
+  let boxSize = 100;
+  // var geometry = new THREE.BoxGeometry(boxSize, boxSize, boxSize, 1, 1, 1);
+  var geometry = new THREE.ConeGeometry(boxSize, boxSize, 3);
 
-  var material = new THREE.MeshBasicMaterial({color: 0xffffff});
+  var material = new THREE.MeshLambertMaterial({color: 0x0000ff});
   var cube = new THREE.Mesh(geometry, material);
   cube.position.y = 75;
 
   var geo = new THREE.EdgesGeometry( cube.geometry );
-  var mat = new THREE.LineBasicMaterial( { color: 0x000000, linewidth: 10} );
+  var mat = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 10} );
   var wireframe = new THREE.LineSegments( geo, mat );
   wireframe.renderOrder = 1; // make sure wireframes are rendered 2nd
-  cube.add( wireframe );
+  // cube.add( wireframe );
 
   scene.add(cube);
+
+
+  let sphereSize = 125;
+  let sphereSegments = 0;
+  // var geoSphere = new THREE.SphereGeometry(sphereSize, sphereSegments, sphereSegments);
+  var geoSphere = new THREE.DodecahedronGeometry(sphereSize, sphereSegments);
+  var matSphere = new THREE.MeshLambertMaterial({color: 0xff0000});
+  var sphere = new THREE.Mesh(geoSphere, matSphere);
+  sphere.position.y = 150;
+  sphere.position.x = -200;
+  sphere.position.z = -200;
+  var geoSphereWireframe = new THREE.EdgesGeometry( sphere.geometry );
+  var sphereWireframe = new THREE.LineSegments(geoSphereWireframe, mat);
+  // sphere.add( sphereWireframe );
+  scene.add(sphere);
 
 
 
   let floorPieces = [];
   function addFloor(){
     // to traverse a square
-    let divisions = 5;
+    let xNum = 5;
+    let yNum = 5;
     let margin = 20;
     let floorSize = 100;
+    let floorDepth = 10;
     let y = -100;
 
-    let initial = (divisions / 2) * floorSize * -1;
-    initial += (floorSize / 2); // offset since boxes are created from center
-    initial -= ((margin * (divisions - 1)) / 2);
+    let xInitial = (xNum / 2) * floorSize * -1;
+    xInitial += (floorSize / 2); // offset since boxes are created from center
+    xInitial -= ((margin * (xNum - 1)) / 2);
 
-    for(let i = 0; i < divisions; i++){
-      let x = initial + (i * floorSize) + (i * margin);
+    let yInitial = (yNum / 2) * floorSize * -1;
+    yInitial += (floorSize / 2); // offset since boxes are created from center
+    yInitial -= ((margin * (yNum - 1)) / 2);
+
+    for(let i = 0; i < xNum; i++){
+      let x = xInitial + (i * floorSize) + (i * margin);
       let row = [];
-      for(let j = 0; j < divisions; j++){
-        let z = initial + (j * floorSize) + (j * margin);
-        let piece = new FloorSquare(floorSize, x, y, z);
+      for(let j = 0; j < yNum; j++){
+        let z = yInitial + (j * floorSize) + (j * margin);
+        let piece = new FloorSquare(floorSize, floorDepth, x, y, z);
         row.push(piece);
 
         scene.add(piece.mesh);
@@ -110,9 +148,7 @@ function Output(width, height, id){
 
 
 
-  function FloorSquare(size, x, y, z){
-    let depth = 1;
-
+  function FloorSquare(size, depth, x, y, z){
     // create piece
     var material = new THREE.MeshBasicMaterial({color: 0xffffff});
     let floorGeometry = new THREE.BoxGeometry(size, depth, size, 1, 1, 1);
