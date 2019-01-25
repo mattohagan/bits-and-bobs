@@ -23,6 +23,18 @@
 // 3. add route to affect one of the keeper variables
 
 
+
+// Possible words for abstractions
+//
+// colonialism
+// encouragement
+// money
+// sharing
+// care
+// ideology
+//
+
+
 $(function () {
   var socket = io();
 
@@ -129,6 +141,29 @@ $(function () {
         }
       },
 
+      'input-cube-amp': {
+        update: function(val){
+          controls['input-cube-amp'].updateRotation(val.rotation.x, val.rotation.y, val.rotation.z);
+          controls['input-cube-amp'].updatePosition(val.position.x, val.position.y, val.position.z);
+
+          if(page == 'all'){
+            // console.log('position.y: ', val.position.y)
+            // console.log('rotation.x: ', val.rotation.x)
+            let mappedY = THREE.Math.mapLinear(val.position.y, 0, 350, 1, 2);
+            // console.log('mappedY: ', mappedY);
+            let combinedVal = val.rotationX * mappedY;
+
+
+            keeper.sphere1.updateAmplitude(combinedVal);
+          }
+        },
+        render: function(parentId){
+          let el = "<div id='input-cube-amp'></div>";
+          $('#' + parentId).append(el);
+          controls['input-cube-amp'] = new Canvas(controlWidth, controlHeight, "input-cube-amp");
+        }
+      },
+
       'input-orientation': {
         update: function(val){
           canvas3.updateRotation(val.x, val.y, val.z, 'input-orientation');
@@ -184,7 +219,7 @@ $(function () {
     }
 
     this.renderAllControls = function(){
-      let controls = ['input-slider', 'input-cube', 'button-rotate'];
+      let controls = ['input-slider', 'input-cube', 'button-rotate', 'input-cube-amp'];
       for(let i = 0; i < controls.length; i++){
         inputControls[controls[i]].render(controlsParentId);
       }
@@ -227,6 +262,12 @@ $(function () {
     this.rotationSpeedY = 0.01;
     let isRotating = true;
 
+    if(page == 'phone') {
+      let phoneScale = 3;
+      width = width * phoneScale;
+      height = height * phoneScale;
+    }
+
 
     var scene = new THREE.Scene();
   	var camera = new THREE.PerspectiveCamera(75, width/height, 1, 10000);
@@ -260,7 +301,6 @@ $(function () {
   		renderer.render(scene, camera);
   	};
 
-
     this.updateRotation = function(x, y, z){
       cube.rotation.x = x;
       cube.rotation.y = y;
@@ -282,9 +322,7 @@ $(function () {
     gridHelper.position.y = -100;
 		gridHelper.position.x = 0;
     // gridHelper.geometry.rotateX( Math.PI / 10 );
-    if(id == 'input-cube' || id == 'input-orientation'){
-      scene.add( gridHelper );
-    }
+    scene.add( gridHelper );
 
   	render();
 
@@ -305,7 +343,12 @@ $(function () {
         return angle * (180 / Math.PI);
     };
 
-    const renderArea = renderer.domElement;
+    let renderArea;
+    if(page == 'phone'){
+      renderArea = document;
+    } else {
+      renderArea = renderer.domElement;
+    }
 
 
     ['mousedown', 'touchstart'].forEach(function(e) {
@@ -332,11 +375,14 @@ $(function () {
           y: offsetY-previousMousePosition.y
       };
 
-      if(isDragging && id == 'input-cube') {
+      let rotatingRight = true;
+
+      if(isDragging) {
           // let deltaRotationQuaternion = new THREE.Quaternion().
           // setFromEuler(
           //     new THREE.Euler(toRadians(deltaMove.y * 1), toRadians(deltaMove.x * 1), 0, 'XYZ')
           // );
+
 
           // update rotation around Y axis
           let deltaRotationQuaternion = new THREE.Quaternion().
@@ -346,17 +392,35 @@ $(function () {
           cube.quaternion.multiplyQuaternions(deltaRotationQuaternion, cube.quaternion);
 
 
-          // update position and eventually size 
+          // update position and eventually size
 
           let direction = null;
-          if (offsetX == previousMousePosition.x && offsetY > previousMousePosition.y) {
+          if (offsetX > previousMousePosition.x && offsetY > previousMousePosition.y) {
+            // direction="bottom-right";
+            direction = "down";
+          }
+          else if (offsetX > previousMousePosition.x && offsetY < previousMousePosition.y) {
+            // direction="top-right";
+            direction = "up";
+          }
+          else if (offsetX < previousMousePosition.x && offsetY < previousMousePosition.y) {
+              // direction="top-left";
+              direction = "up";
+          }
+          else if (offsetX < previousMousePosition.x && offsetY > previousMousePosition.y) {
+              // direction="bottom-left";
+              direction = "down";
+          }
+          else if (offsetX == previousMousePosition.x && offsetY > previousMousePosition.y) {
               direction = "down";
           }
           else if (offsetX == previousMousePosition.x && offsetY < previousMousePosition.y) {
               direction = "up";
           }
 
-          let moveDelta = 10;
+
+
+          let moveDelta = 15;
 
           if(direction == "up"){
             cube.position.y += moveDelta;
@@ -364,9 +428,32 @@ $(function () {
             cube.position.y -= moveDelta;
           }
 
-          let val = toDegrees(cube.rotation.x);
+
+
+          let val = toDegrees(cube.rotation.y);
+
+
+          let rotationMax = Math.PI;
+
+          console.log(cube.rotation.y);
+          console.log(rotationMax);
+          let rotationMin = 0;
+          if(cube.rotation.y > rotationMax) {
+            cube.rotation.y = rotationMax
+          } else if (val < 0) {
+            // cube.rotation.y = toRadians(rotationMin);
+          }
+
+          // if(rotatingRight){
+          //   if(val > rotationMax){
+          //
+          //   }
+          // }
+
+
+          // console.log('rotation.y origin: ', cube.rotation.y);
           let input = {
-            type: 'input-cube',
+            type: id,
             value: {
               rotationX: val,
               rotation: {

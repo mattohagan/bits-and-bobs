@@ -1,3 +1,11 @@
+.controls {
+  display: flex;
+}
+
+.controls--is-phone {
+  position: fixed;
+}
+
 .controls_row {
   display: flex;
   flex-direction: row;
@@ -8,4 +16,8 @@
 #container2D {
   position: absolute;
   z-index: -1;
+}
+
+#output {
+  margin-top: -250px;
 }

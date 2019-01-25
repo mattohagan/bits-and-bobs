@@ -5,7 +5,7 @@ var io = require('socket.io')(http);
 var port = process.env.PORT || 3000;
 
 let shelf = new Shelf(
-  ['button-rotate', 'input-slider', 'input-cube']
+  ['input-cube-amp', 'input-slider', 'input-cube']
 );
 
 app.get('/', function(req, res){
