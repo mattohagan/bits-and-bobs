@@ -5,7 +5,7 @@ let outputHeight = 1000;
 let keeper = new Keeper();
 
 let colors = {
-  'green': 0x3BDAA5,
+  'green': 0x20A87B,
   'tan': 0xF4E3CF,
   'lightyellow': 0xFFEEAB,
   'brownish': 0xE16641,
@@ -15,8 +15,7 @@ let colors = {
   'purple': 0xD2B7FF,
   'yellow': 0xFFEC5F,
   'blue': 0x0091E2,
-  'white': 0xffffff,
-  'gray': 0xCFD1D2
+  'white': 0xffffff
 };
 
 
@@ -53,7 +52,7 @@ function Keeper(){
   }
 
   this.sphere1 = {
-    'y': 50,
+    'y': 150,
     'offsetSpeed': 0.02,
     'offsetSpeedMin': 0.02,
     'offsetSpeedMax': 0.2,
@@ -77,8 +76,8 @@ function Keeper(){
   }
 
   this.sphere2 = {
-    'x': 100,
-    'y': -100,
+    'x': 350,
+    'y': 50,
     'z': 0,
     'offsetSpeed': 0.035,
     'offset': 0,
@@ -87,15 +86,15 @@ function Keeper(){
       that.sphere2.offset += that.sphere2.offsetSpeed;
       let cosWave = keeper.sphere2.amp * Math.cos(that.sphere2.offset);
       let sinWave = keeper.sphere2.amp * Math.sin(that.sphere2.offset);
-      that.sphere2.x += cosWave;
+      that.sphere2.y += cosWave;
       // that.sphere2.x += sinWave;
       that.sphere2.z += sinWave;
     }
   }
 
   this.floor = {
-    'xNum': 6,
-    'yNum': 4,
+    'xNum': 8,
+    'yNum': 5,
     'zSpeed': 0.1,
     'zStart': -500,
     'zEnd': 500
@@ -132,15 +131,10 @@ function Output(width, height, id){
 
 
   // LIGHTS!
-  var ambient = new THREE.AmbientLight(colors.white, 0.75);
+  var ambient = new THREE.AmbientLight(0xffffff, 0.75);
   scene.add(ambient);
-  var spotlight = new THREE.SpotLight(colors.white, 0.5);
-  spotlight.position.set(-1400, 1700, 1400);
-  spotlight.castShadow = true;
-  spotlight.shadowDarkness = 1;
-  // spotlight.shadowCameraVisible = true;
-  spotlight.shadow.camera.far = 4000;
-
+  var spotlight = new THREE.SpotLight(0xffffff, 0.5);
+  spotlight.position.set(-2000, 2000, 2000);
   scene.add(spotlight);
 
   // var lightHelper = new THREE.SpotLightHelper( spotlight, 5 );
@@ -150,42 +144,36 @@ function Output(width, height, id){
   // var hemisphere = new THREE.HemisphereLight(0xff0000,0xffffff,0.9)
   // scene.add(hemisphere);
 
-  // var helper = new THREE.CameraHelper( spotlight.shadow.camera );
-  // scene.add( helper );
+
 
 
   var renderer = new THREE.WebGLRenderer({ alpha: true });
   renderer.setSize(width, height);
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   document.getElementById(id).appendChild(renderer.domElement);
 
-  let boxSize = 200;
-  var geometry = new THREE.BoxGeometry(boxSize, boxSize, 2, 1, 1, 1);
+  let boxSize = 100;
+  // var geometry = new THREE.BoxGeometry(boxSize, boxSize, boxSize, 1, 1, 1);
   // var geometry = new THREE.ConeGeometry(boxSize, boxSize, 3);
-  // var geometry = new THREE.DodecahedronGeometry(180, 0);
+  var geometry = new THREE.DodecahedronGeometry(180, 1);
 
-  var material = new THREE.MeshLambertMaterial({color: colors.red});
+  var material = new THREE.MeshLambertMaterial({color: colors.white});
   var cube = new THREE.Mesh(geometry, material);
-  cube.position.z = -100;
-  cube.position.x = 350;
-  cube.position.y = 150;
+  cube.position.y = 75;
 
   var geo = new THREE.EdgesGeometry( cube.geometry );
   var mat = new THREE.LineBasicMaterial( { color: 0x000000, linewidth: 10} );
   var wireframe = new THREE.LineSegments( geo, mat );
   wireframe.renderOrder = 1; // make sure wireframes are rendered 2nd
   // cube.add( wireframe );
-  // cube.receiveShadow = true;
-  cube.castShadow = true;
+
   scene.add(cube);
 
 
-  let sphereSize = 75;
+  let sphereSize = 125;
   let sphereSegments = 0;
   // var geoSphere = new THREE.SphereGeometry(sphereSize, sphereSegments, sphereSegments);
-  var geoSphere = new THREE.DodecahedronGeometry(sphereSize, 0);
-  var matSphere = new THREE.MeshLambertMaterial({color: colors.blue});
+  var geoSphere = new THREE.DodecahedronGeometry(sphereSize, 1);
+  var matSphere = new THREE.MeshLambertMaterial({color: colors.white});
   var sphere = new THREE.Mesh(geoSphere, matSphere);
   sphere.position.y = keeper.sphere1.y;
   sphere.position.x = -200;
@@ -193,51 +181,42 @@ function Output(width, height, id){
   var geoSphereWireframe = new THREE.EdgesGeometry( sphere.geometry );
   var sphereWireframe = new THREE.LineSegments(geoSphereWireframe, mat);
   // sphere.add( sphereWireframe );
-  sphere.castShadow = true;
   scene.add(sphere);
 
-  let sphereSize2 = 60;
+  let sphereSize2 = 50;
   let sphereSegments2 = 0;
   // var geoSphere = new THREE.SphereGeometry(sphereSize, sphereSegments, sphereSegments);
-  var geoSphere2 = new THREE.DodecahedronGeometry(sphereSize2, 0);
-  // var geoSphere2 = new THREE.ConeGeometry(sphereSize2, sphereSize2, 3);
-  var matSphere2 = new THREE.MeshLambertMaterial({color: colors.yellow});
+  var geoSphere2 = new THREE.DodecahedronGeometry(sphereSize2, 1);
+  var matSphere2 = new THREE.MeshLambertMaterial({color: colors.white});
   var sphere2 = new THREE.Mesh(geoSphere2, matSphere2);
   sphere2.position.y = keeper.sphere2.y;
   sphere2.position.x = keeper.sphere2.x;
   sphere2.position.z = keeper.sphere2.z;
-  sphere2.castShadow = true;
   scene.add(sphere2);
 
 
-  let sphereSize3 = 190;
+  let sphereSize3 = 35;
   let sphereSegments3 = 0;
   // var geoSphere = new THREE.SphereGeometry(sphereSize, sphereSegments, sphereSegments);
-  // var geoSphere3 = new THREE.OctahedronGeometry(sphereSize3, 0);
-  var geoSphere3 = new THREE.ConeGeometry(sphereSize3, sphereSize3, 3);
-  var matSphere3 = new THREE.MeshLambertMaterial({color: colors.red});
+  var geoSphere3 = new THREE.OctahedronGeometry(sphereSize3, 0);
+  var matSphere3 = new THREE.MeshLambertMaterial({color: colors.tan});
   var sphere3 = new THREE.Mesh(geoSphere3, matSphere3);
   sphere3.position.y = -50;
-  sphere3.position.x = -400;
+  sphere3.position.x = -350;
   sphere3.position.z = 50;
-  sphere3.rotation.x = 0;
-  sphere3.rotation.y = 0.7;
-  sphere3.rotation.z = 0.2;
-  sphere3.castShadow = true;
   scene.add(sphere3);
 
-  let sphereSize4 = 30;
+  let sphereSize4 = 35;
   let sphereSegments4 = 0;
-  var geoSphere4 = new THREE.SphereGeometry(sphereSize4, sphereSegments4, sphereSegments4);
-  // var geoSphere4 = new THREE.OctahedronGeometry(sphereSize3, 0);
-  var matSphere4 = new THREE.MeshLambertMaterial({color: colors.blue});
+  // var geoSphere = new THREE.SphereGeometry(sphereSize, sphereSegments, sphereSegments);
+  var geoSphere4 = new THREE.OctahedronGeometry(sphereSize3, 0);
+  var matSphere4 = new THREE.MeshLambertMaterial({color: colors.skyblue});
   var sphere4 = new THREE.Mesh(geoSphere4, matSphere4);
   sphere4.position.y = 170;
   sphere4.position.x = 300;
   sphere4.position.z = -100;
   // sphere4.rotation.y = 1;
   // sphere4.rotation.x = 1;
-  sphere4.castShadow = true;
   scene.add(sphere4);
 
 
@@ -252,10 +231,10 @@ function Output(width, height, id){
   let floorPieces = [];
   function addFloor(){
     // to traverse a square
-    let margin = 50;
-    let floorSize = 80;
+    let margin = 0;
+    let floorSize = 100;
     let floorDepth = 10;
-    let y = -200;
+    let y = -100;
 
     let xInitial = (keeper.floor.xNum / 2) * floorSize * -1;
     xInitial += (floorSize / 2); // offset since boxes are created from center
@@ -321,10 +300,9 @@ function Output(width, height, id){
 
   function FloorSquare(size, depth, x, y, z){
     // create piece
-    var material = new THREE.MeshLambertMaterial({color: colors.gray});
+    var material = new THREE.MeshLambertMaterial({color: 0xffffff});
     let floorGeometry = new THREE.BoxGeometry(size, depth, size, 1, 1, 1);
     let floorSquare = new THREE.Mesh(floorGeometry, material);
-    floorSquare.receiveShadow = true;
 
     // position piece
     // floorSquare.rotation.x = Math.PI/ 10;

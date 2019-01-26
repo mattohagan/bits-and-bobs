@@ -1,3 +1,54 @@
+@font-face {
+  font-family: 'Souvenir';
+  src: url('/fonts/Souvenir-Demi.otf');
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: 'Souvenir';
+  src: url('/fonts/Souvenir-Bold.otf');
+  font-weight: 600;
+}
+
+html {
+  background: -moz-linear-gradient(45deg, #1e5799 1%, #7db9e8 100%); /* FF3.6-15 */
+  background: -webkit-linear-gradient(45deg, #1e5799 1%,#7db9e8 100%); /* Chrome10-25,Safari5.1-6 */
+  height: 100%;
+}
+
+.phone-page {
+  background: white;
+}
+
+/* color picker override */
+.sp-button-container {
+  display: none;
+}
+
+.sp-picker-container {
+  border: none;
+}
+
+.sp-container {
+  border: 0;
+  background: none;
+}
+
+.sp-clear {
+  border: 0;
+  position: relative;
+}
+
+.sp-clear::after {
+  content: '';
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  background: white;
+  border-radius: 2px;
+  z-index: -2;
+}
+
 .controls {
   display: flex;
 }
@@ -19,5 +70,24 @@
 }
 
 #output {
-  margin-top: -250px;
+  margin-top: -350px;
+  pointer-events: none;
+}
+
+.emotion {
+  font-family: 'Souvenir', serif;
+  font-size: 3rem;
+  color: black;
+  z-index: 1000;
+}
+
+.emotion:hover {
+  cursor: text;
+  -webkit-text-fill-color: white;
+  -webkit-text-stroke-width: 1px;
+  -webkit-text-stroke-color: black;
+}
+
+.emotion:focus {
+  outline: none;
 }

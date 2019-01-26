@@ -5,7 +5,7 @@ var io = require('socket.io')(http);
 var port = process.env.PORT || 3000;
 
 let shelf = new Shelf(
-  ['input-cube-amp', 'input-slider', 'input-cube']
+  ['input-cube-amp', 'input-slider', 'input-cube', 'input-color-1', 'input-color-2']
 );
 
 app.get('/', function(req, res){
@@ -17,6 +17,7 @@ app.get('/phone', function(req, res){
 });
 
 app.use("/public", express.static(__dirname + '/public'));
+app.use("/fonts", express.static(__dirname + '/public/fonts'));
 
 http.listen(port, function(){
   console.log('listening on *:' + port);

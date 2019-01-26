@@ -34,7 +34,6 @@
 // ideology
 //
 
-
 $(function () {
   var socket = io();
 
@@ -89,9 +88,31 @@ $(function () {
 			}
 			p.updatePixels();
 		}
-	}
+	};
 
+  let colorWheel1, colorWheel2;
 
+  function handleColorChange1(colorObj){
+    let input = {
+      type: 'input-color-1',
+      value: {
+        colorObj: colorObj,
+        wheelObj: colorWheel1
+      }
+    };
+    router.input(input);
+  }
+
+  function handleColorChange2(colorObj){
+    let input = {
+      type: 'input-color-2',
+      value: {
+        colorObj: colorObj,
+        wheelObj: colorWheel2
+      }
+    };
+    router.input(input);
+  }
 
 
   function Router(){
@@ -99,6 +120,103 @@ $(function () {
     let controls = {};
 
     let inputControls = {
+      // 'input-color-1': {
+      //   update: function(val){
+      //     let elId = 'input-color-1';
+      //
+      //     if(page == 'all'){
+      //       val.wheelObj.color.set(val.colorObj.hsv);
+      //       keeper.color.updateColor('1', val.colorObj.hexString);
+      //     }
+      //   },
+      //   render: function(parentId){
+      //     let elId = 'input-color-1';
+      //     let el = $("<div id='" + elId + "' />");
+      //     $('#' + parentId).append(el);
+      //
+      //     colorWheel1 = new iro.ColorPicker("#"+elId, {
+      //       color: '#fff',
+      //       padding: 6,
+      //       borderWidth: 0,
+      //       borderColor: '#fff',
+      //       display: 'block',
+      //       anticlockwise: false,
+      //       width: 320,
+      //       height: 320,
+      //       sliderHeight: undefined,
+      //       sliderMargin: 24,
+      //       markerRadius: 8,
+      //       wheelLightness: undefined,
+      //     });
+      //
+      //     colorWheel1.on('color:change', debounce(handleColorChange, 250, false));
+      //   }
+      // },
+
+      'input-color-1': {
+        update: function(val){
+          let elId = 'input-color-1';
+
+          if(page == 'all'){
+            $("#" + elId).spectrum("set", val);
+            keeper.color.updateColor('1', val);
+          }
+        },
+        render: function(parentId){
+          let elId = 'input-color-1';
+          let el = $("<input type='range' id='" + elId + "' />");
+
+          $('#' + parentId).append(el);
+
+          $("#" + elId).spectrum({
+              flat: true,
+              showInput: false,
+              allowEmpty:false,
+              move: function(color){
+                let hex = color.toHexString();
+
+                let input = {
+                  type: elId,
+                  value: hex
+                };
+                router.input(input);
+              }
+          });
+        }
+      },
+
+      'input-color-2': {
+        update: function(val){
+          let elId = 'input-color-2';
+
+          if(page == 'all'){
+            $("#" + elId).spectrum("set", val);
+            keeper.color.updateColor('2', val);
+          }
+        },
+        render: function(parentId){
+          let elId = 'input-color-2';
+          let el = $("<input type='range' id='" + elId + "' />");
+
+          $('#' + parentId).append(el);
+
+          $("#" + elId).spectrum({
+              flat: true,
+              showInput: false,
+              allowEmpty:false,
+              move: function(color){
+                let hex = color.toHexString();
+
+                let input = {
+                  type: elId,
+                  value: hex
+                };
+                router.input(input);
+              }
+          });
+        }
+      },
+
       'input-slider': {
         update: function(val){
           let elId = 'input-slider';
@@ -219,7 +337,7 @@ $(function () {
     }
 
     this.renderAllControls = function(){
-      let controls = ['input-slider', 'input-cube', 'button-rotate', 'input-cube-amp'];
+      let controls = ['input-slider', 'input-cube', 'input-cube-amp', 'input-color-1', 'input-color-2'];
       for(let i = 0; i < controls.length; i++){
         inputControls[controls[i]].render(controlsParentId);
       }
@@ -435,8 +553,6 @@ $(function () {
 
           let rotationMax = Math.PI;
 
-          console.log(cube.rotation.y);
-          console.log(rotationMax);
           let rotationMin = 0;
           if(cube.rotation.y > rotationMax) {
             cube.rotation.y = rotationMax
@@ -549,3 +665,19 @@ $(function () {
 
 
 });
+
+// found online somewhere
+function debounce(func, wait, immediate) {
+  var timeout;
+  return function() {
+    var context = this, args = arguments;
+    var later = function() {
+      timeout = null;
+      if (!immediate) func.apply(context, args);
+    };
+    var callNow = immediate && !timeout;
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+    if (callNow) func.apply(context, args);
+  };
+};
