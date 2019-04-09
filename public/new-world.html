@@ -1,0 +1,53 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Bits and bobs</title>
+    <link rel='stylesheet' href='public/spectrum.css' />
+    <link rel='stylesheet' href='public/new-world.css'>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="public/jquery.min.js"></script>
+    <script src='public/three.min.js'></script>
+    <script src='public/spectrum.js'></script>
+    <script src='public/iro.min.js'></script>
+    <script src="public/p5.min.js"></script>
+  </head>
+  <body>
+    <div id='container2D'></div>
+    <div class='header'>
+      <div class='header_left'>
+        <!-- <div class='description'>you can type above !</div> -->
+      </div>
+
+      <!-- <div class='header_right'>
+        <div class='phone-notice'><span>☏</span> control from your phone at <a target="_blank" href='http://ohagan.co/bits'>http://ohagan.co/bits</a> !</div>
+        <div class='description'>~ up to 5 friends can join ~</div>
+      </div> -->
+    </div>
+    <div class='emotion-container'>
+      <div class='emotion' contenteditable="true">[ insert emotion here ]</div>
+    </div>
+    <div class='output-container'>
+      <div id='output'></div>
+    </div>
+    <!-- <div>
+      X: <span id='x'>__</span>
+    </div>
+    <div>
+      Y: <span id='y'>__</span>
+    </div>
+    <div>
+      Z: <span id='z'>__</span>
+    </div> -->
+    <div class='controls' id='controls'>
+      <div class='controls_row'>
+        <input type='button' id="button-1" />
+        <input type='button' id="button-2" />
+        <!-- <div id='input-orientation'></div> -->
+      </div>
+    </div>
+
+    <script> let page = 'all'; </script>
+    <script src='public/new-world.js'></script>
+    <script src='public/index.js'></script>
+  </body>
+</html>

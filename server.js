@@ -16,6 +16,10 @@ app.get('/phone', function(req, res){
   res.sendFile(__dirname + '/public/phone.html');
 });
 
+app.get('/new-world', function(req, res){
+  res.sendFile(__dirname + '/public/new-world.html');
+});
+
 app.use("/public", express.static(__dirname + '/public'));
 app.use("/fonts", express.static(__dirname + '/public/fonts'));
 
