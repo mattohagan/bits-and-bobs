@@ -2,8 +2,10 @@
 <html class='phone-page'>
   <head>
     <title>Bits and bobs</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel='stylesheet' href='public/spectrum.css'>
-    <link rel='stylesheet' href='public/index.css'>
+    <link rel='stylesheet' href='public/new-world.css'>
+    <link rel='stylesheet' type='text/css' href='https://use.typekit.net/bkn6wwa.css'>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="public/jquery.min.js"></script>
@@ -13,7 +15,15 @@
     <script src="public/p5.min.js"></script>
   </head>
   <body>
+    <div class='nav'>
+      <div class='nav-item nav-item--is-active' id='nav-control'>Use control</div>
+      <div class='nav-item' id='nav-type'>Type emotion</div>
+    </div>
     <div class='controls controls--is-phone' id='controls'></div>
+    <div class='type-emotion' id='type'>
+      <div class='type-emotion_input' placeholder='[insert emotion here]' type='text' id='input-emotion' contenteditable='true'></div>
+    </div>
+
 
     <script> let page = 'phone'; </script>
     <script src='public/index.js'></script>

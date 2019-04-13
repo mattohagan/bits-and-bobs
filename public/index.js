@@ -43,6 +43,42 @@ $(function () {
 
   let router = new Router();
 
+  if(page == 'phone'){
+    // setup events for navigation
+    let controlContainer = $('#controls');
+    let typeContainer = $('#type');
+    typeContainer.hide();
+
+    // transition to use control
+    $('#nav-control').click(function(){
+      typeContainer.fadeOut(200, function(){
+        typeContainer.hide();
+
+        controlContainer.fadeIn(200, function(){
+          $(controlContainer).css('opacity', 1);
+        });
+      });
+
+      $('#nav-control').addClass('nav-item--is-active');
+      $('#nav-type').removeClass('nav-item--is-active');
+    });
+
+    // transition to type emotion
+    $('#nav-type').click(function(){
+      controlContainer.fadeOut(200, function(){
+        controlContainer.hide();
+
+        typeContainer.fadeIn(200, function(){
+          $(typeContainer).css('opacity', 1);
+          $('#input-emotion').focus();
+        });
+      });
+
+      $('#nav-type').addClass('nav-item--is-active');
+      $('#nav-control').removeClass('nav-item--is-active');
+    });
+  }
+
   // to use for 2D canvas
 	var sketch2D = function(p){
 		let buffer, size, xOrigin, yOrigin, ySize;
@@ -380,11 +416,11 @@ $(function () {
     this.rotationSpeedY = 0.01;
     let isRotating = true;
 
-    if(page == 'phone') {
-      let phoneScale = 3;
-      width = width * phoneScale;
-      height = height * phoneScale;
-    }
+    // if(page == 'phone') {
+    //   let phoneScale = 3;
+    //   width = width * phoneScale;
+    //   height = height * phoneScale;
+    // }
 
 
     var scene = new THREE.Scene();

@@ -60,6 +60,64 @@ body {
 
 .controls--is-phone {
   position: fixed;
+  display: flex;
+  justify-content: center;
+  padding-top: 5rem;
+  width: 100%;
+}
+
+.nav {
+  width: 100%;
+  position: relative;
+  border-bottom: 1px solid rgba(0,0,0,0.2);
+  display: flex;
+  justify-content: space-around;
+}
+
+.nav-item {
+  text-align: center;
+  font-family: itc-avant-garde-gothic-pro, sans-serif;
+  letter-spacing: 0.2px;
+  padding-bottom: 1.5rem;
+  padding-top: 1.5rem;
+  margin-bottom: -1px;
+  color: rgba(0,0,0,0.4);
+  border-bottom: 1px solid transparent;
+  transition: all 200ms ease-in-out;
+}
+
+.nav-item--is-active {
+  border-bottom: 1px solid black;
+  color: black;
+}
+
+.type-emotion {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding-top: 5rem;
+  opacity: 0;
+}
+
+.type-emotion .type-emotion_input {
+  border: 1px solid black;
+  padding: 1rem;
+  outline: none;
+  font-family: 'Souvenir', serif;
+  font-size: 3rem;
+  resize: none;
+  width: 75%;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 12.5rem;
+  word-break: break-word;
+}
+
+.type-emotion [contentEditable=true]:empty:before{
+  content: attr(placeholder);
+  color: rgba(0,0,0,0.4);
 }
 
 .controls_row {
@@ -105,6 +163,7 @@ body {
   font-family: 'Souvenir', serif;
   text-align: center;
   font-size: 20rem;
+  line-height: 1.1em;
   width: 80%;
   color: white;
   /* text-shadow: 6px 6px 0 rgba(0,0,0,0.2); */
@@ -126,7 +185,7 @@ body {
 }
 
 .description {
-  font-family: 'ITC Avant Garde Gothic Pro', sans-serif;
+  font-family: itc-avant-garde-gothic-pro, sans-serif;
   font-size: 1rem;
   color: rgba(0,0,0,0.65);
 }
@@ -160,7 +219,7 @@ body {
   border: 1px solid black;
   border-radius: 1px;
   box-shadow: 10px 10px 0 rgba(0,0,0,0.2);
-  font-family: 'ITC Avant Garde Gothic Pro', sans-serif;
+  font-family: itc-avant-garde-gothic-pro, sans-serif;
   font-size: 1rem;
   line-height: 1.5rem;
 }
