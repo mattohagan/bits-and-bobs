@@ -47,7 +47,6 @@ $(function () {
     // setup events for navigation
     let controlContainer = $('#controls');
     let typeContainer = $('#type');
-    typeContainer.hide();
 
     // transition to use control
     $('#nav-control').click(function(){
@@ -76,6 +75,17 @@ $(function () {
 
       $('#nav-type').addClass('nav-item--is-active');
       $('#nav-control').removeClass('nav-item--is-active');
+    });
+
+    // watch for emotion input typing
+    document.getElementById('input-emotion').addEventListener('input', function(e){
+      let str = e.srcElement.innerText;
+
+      let input = {
+        type: 'type-emotion',
+        value: str
+      };
+      router.input(input);
     });
   }
 
@@ -356,6 +366,30 @@ $(function () {
         }
       },
 
+      'type-emotion': {
+        update: function(val){
+          if(page == 'all'){
+            keeper.emotion.updateText(val);
+          }
+        }
+      },
+
+      'input-cube-river': {
+        update: function(val){
+          controls['input-cube-river'].updateRotation(val.rotation.x, val.rotation.y, val.rotation.z);
+          controls['input-cube-river'].updatePosition(val.position.x, val.position.y, val.position.z);
+
+          if(page == 'all'){
+            keeper.river.setSpeed(val.position.y);
+          }
+        },
+        render: function(parentId){
+          let el = "<div id='input-cube-river'></div>";
+          $('#' + parentId).append(el);
+          controls['input-cube-river'] = new Canvas(controlWidth, controlHeight, "input-cube-river");
+        }
+      },
+
       'NA': {
         render: function(parentId){
           $(document).append('<b>Try refreshing</b><br>No controls available');
@@ -373,7 +407,7 @@ $(function () {
     }
 
     this.renderAllControls = function(){
-      let controls = ['input-slider', 'input-cube', 'input-cube-amp', 'input-color-1', 'input-color-2'];
+      let controls = ['input-slider', 'input-cube', 'input-cube-amp', 'input-color-1', 'input-color-2', 'input-cube-river'];
       for(let i = 0; i < controls.length; i++){
         inputControls[controls[i]].render(controlsParentId);
       }
@@ -396,6 +430,13 @@ $(function () {
   socket.on('controller', function(controllerId){
     if(page == 'phone'){
       router.renderControl(controllerId);
+      $('#controls').animate({
+        opacity: 1
+      }, 200, function() {
+        // Animation complete.
+        console.log('done');
+        $(this).css('opacity', 1);
+      });
     }
   });
 

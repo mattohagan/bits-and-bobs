@@ -149,31 +149,20 @@ function Output(width, height, id){
 
 
   // LIGHTS!
-  var ambient = new THREE.AmbientLight(colors.white, 0.8);
+  var ambient = new THREE.AmbientLight(colors.black, 0.2);
   scene.add(ambient);
 
+  var sun = new THREE.PointLight(colors.white, 100, 2000);
+  // var sun = new THREE.SpotLight(colors.white, 1000);
+  sun.position.set(-400, 400, 400);
+  sun.castShadow = true;
+  // sun.shadowDarkness = 1;
+  // sun.shadow.camera.near = 1;
+  // sun.shadow.bias = -0.00002;
+  // sun.shadowCameraVisible = true;
+  sun.shadow.camera.far = 4000;
 
-  // DA SUN
-  // var sun = new THREE.PointLight(colors.white, 100, 2000);
-  // // var sun = new THREE.SpotLight(colors.white, 1000);
-  // sun.position.set(-400, 400, 400);
-  // sun.castShadow = true;
-  // // sun.shadowDarkness = 1;
-  // // sun.shadow.camera.near = 1;
-  // // sun.shadow.bias = -0.00002;
-  // // sun.shadowCameraVisible = true;
-  // sun.shadow.camera.far = 4000;
-  //
-  // scene.add(sun);
-
-  var spotlight = new THREE.SpotLight(colors.white, 0.5);
-  spotlight.position.set(-1400, 1700, 1400);
-  spotlight.castShadow = true;
-  spotlight.shadowDarkness = 1;
-  // spotlight.shadowCameraVisible = true;
-  spotlight.shadow.camera.far = 4000;
-
-  scene.add(spotlight);
+  scene.add(sun);
 
   // var lightHelper = THREE.CameraHelper( sun.shadow.camera );
   // var lightHelper = new THREE.DirectionalLightHelper( sun, 100 );
@@ -190,8 +179,8 @@ function Output(width, height, id){
   var renderer = new THREE.WebGLRenderer({ alpha: true });
   renderer.setSize(width, height);
   renderer.shadowMap.enabled = true;
-  renderer.shadowMapSoft = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  // renderer.shadowMapSoft = true;
+  // renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   // renderer.shadowCameraFar = camera.far;
   renderer.shadowCameraFar = 4000;
   renderer.shadowCameraFov = 4000;
@@ -207,7 +196,7 @@ function Output(width, height, id){
   // var geometry = new THREE.ConeGeometry(boxSize, boxSize, 3);
   // var geometry = new THREE.DodecahedronGeometry(180, 0);
 
-  var material = new THREE.MeshLambertMaterial({color: colors.red});
+  var material = new THREE.MeshLambertMaterial({color: colors.white});
   var cube = new THREE.Mesh(geometry, material);
   cube.position.z = -100;
   cube.position.x = 350;
@@ -217,7 +206,7 @@ function Output(width, height, id){
   var mat = new THREE.LineBasicMaterial( { color: 0x000000, linewidth: 10} );
   var wireframe = new THREE.LineSegments( geo, mat );
   wireframe.renderOrder = 1; // make sure wireframes are rendered 2nd
-  // cube.add( wireframe );
+  cube.add( wireframe );
   cube.receiveShadow = true;
   cube.castShadow = true;
   scene.add(cube);
@@ -227,14 +216,14 @@ function Output(width, height, id){
   let sphereSegments = 0;
   // var geoSphere = new THREE.SphereGeometry(sphereSize, sphereSegments, sphereSegments);
   var geoSphere = new THREE.DodecahedronGeometry(sphereSize, 0);
-  var matSphere = new THREE.MeshLambertMaterial({color: colors.blue});
+  var matSphere = new THREE.MeshLambertMaterial({color: colors.white});
   var sphere = new THREE.Mesh(geoSphere, matSphere);
   sphere.position.y = keeper.sphere1.y;
   sphere.position.x = -200;
   sphere.position.z = -200;
   var geoSphereWireframe = new THREE.EdgesGeometry( sphere.geometry );
   var sphereWireframe = new THREE.LineSegments(geoSphereWireframe, mat);
-  // sphere.add( sphereWireframe );
+  sphere.add( sphereWireframe );
   sphere.castShadow = true;
   sphere.receiveShadow = true;
   scene.add(sphere);
@@ -244,7 +233,7 @@ function Output(width, height, id){
   // var geoSphere = new THREE.SphereGeometry(sphereSize, sphereSegments, sphereSegments);
   var geoSphere2 = new THREE.DodecahedronGeometry(sphereSize2, 0);
   // var geoSphere2 = new THREE.ConeGeometry(sphereSize2, sphereSize2, 3);
-  var matSphere2 = new THREE.MeshLambertMaterial({color: colors.yellow});
+  var matSphere2 = new THREE.MeshLambertMaterial({color: colors.white});
   var sphere2 = new THREE.Mesh(geoSphere2, matSphere2);
   sphere2.position.y = keeper.sphere2.y;
   sphere2.position.x = keeper.sphere2.x;
@@ -259,7 +248,7 @@ function Output(width, height, id){
   // var geoSphere = new THREE.SphereGeometry(sphereSize, sphereSegments, sphereSegments);
   // var geoSphere3 = new THREE.OctahedronGeometry(sphereSize3, 0);
   var geoSphere3 = new THREE.ConeGeometry(sphereSize3, sphereSize3, 3);
-  var matSphere3 = new THREE.MeshLambertMaterial({color: colors.red});
+  var matSphere3 = new THREE.MeshLambertMaterial({color: colors.white});
   var sphere3 = new THREE.Mesh(geoSphere3, matSphere3);
   sphere3.position.y = -50;
   sphere3.position.x = -400;
@@ -275,7 +264,7 @@ function Output(width, height, id){
   let sphereSegments4 = 0;
   var geoSphere4 = new THREE.SphereGeometry(sphereSize4, sphereSegments4, sphereSegments4);
   // var geoSphere4 = new THREE.OctahedronGeometry(sphereSize3, 0);
-  var matSphere4 = new THREE.MeshLambertMaterial({color: colors.blue});
+  var matSphere4 = new THREE.MeshLambertMaterial({color: colors.white});
   var sphere4 = new THREE.Mesh(geoSphere4, matSphere4);
   sphere4.position.y = 170;
   sphere4.position.x = 300;
@@ -339,9 +328,9 @@ function Output(width, height, id){
     let vars = {
       floorSize: 75,
       floorDepth: 10,
-      floorWidth: 2,
+      floorWidth: 1,
       margin: 0,
-      x: -450,
+      x: -500,
       y: -400,
       z: -1300,
       maxZ: 400
@@ -486,7 +475,7 @@ function Output(width, height, id){
 
   function FloorSquare(size, depth, x, y, z, name){
     // create piece
-    var material = new THREE.MeshLambertMaterial({color: colors.gray});
+    var material = new THREE.MeshLambertMaterial({color: colors.white});
     let floorGeometry = new THREE.BoxGeometry(size, depth, size, 1, 1, 1);
     let floorSquare = new THREE.Mesh(floorGeometry, material);
     floorSquare.receiveShadow = true;
@@ -501,7 +490,7 @@ function Output(width, height, id){
     let floorGeo = new THREE.EdgesGeometry( floorSquare.geometry );
     var mat = new THREE.LineBasicMaterial( { color: 0x000000, linewidth: 10} );
     let floorWireframe = new THREE.LineSegments(floorGeo, mat);
-    // floorSquare.add( floorWireframe );
+    floorSquare.add( floorWireframe );
 
     floorSquare.name = name;
 

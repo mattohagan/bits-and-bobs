@@ -9,15 +9,19 @@ let shelf = new Shelf(
 );
 
 app.get('/', function(req, res){
-  res.sendFile(__dirname + '/public/index.html');
+  res.sendFile(__dirname + '/public/new-world.html');
 });
 
 app.get('/phone', function(req, res){
   res.sendFile(__dirname + '/public/phone.html');
 });
 
-app.get('/new-world', function(req, res){
-  res.sendFile(__dirname + '/public/new-world.html');
+app.get('/v1', function(req, res){
+  res.sendFile(__dirname + '/public/index.html');
+});
+
+app.get('/bnw', function(req, res){
+  res.sendFile(__dirname + '/public/new-world-b-n-w.html');
 });
 
 app.use("/public", express.static(__dirname + '/public'));
